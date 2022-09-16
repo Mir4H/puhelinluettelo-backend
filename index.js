@@ -1,7 +1,9 @@
-const { request, response } = require('express')
 const express = require('express')
+const morgan = require('morgan')
 const app = express()
-app.use(express.json())
+const cors = require('cors')
+
+app.use(cors())
 
 let persons = [
     {
@@ -18,8 +20,7 @@ let persons = [
       "id": 3,
       "name": "Dan Abramov",
       "number": "12-43-234345",
-    }
-    ,
+    },
     {
       "id": 4,
       "name": "Mary Poppendick",
@@ -27,8 +28,18 @@ let persons = [
     }
   ]
 
+app.use(express.json())
+
+morgan.token('data', (req) => {return JSON.stringify(req.body)})
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'))
+
+app.use(express.static('build'))
+
+app.get('/', (req, res) => {
+    res.send('<h1>Hello World!</h1>')
+  })
+
 app.get('/info', (request, response) => {
-    
     response.send(`
     <p>Phonebook has info for ${persons.length} people</p>
     <p>${new Date()}</p>
@@ -58,19 +69,19 @@ app.delete('/api/persons/:id', (request, response) => {
 })
 
 const generateId = () => {
-    const randomId = Math.floor(Math.random() * 10000000)
+    const randomId = new Date().getTime() * Math.random() * 100000000
     return randomId
   }  
 
 app.post('/api/persons', (request, response) => {
     const body = request.body
-
+    
     if (!body.name || !body.number) {
         return response.status(400).json({
             error: 'content missing'
         })
     }
-    if (persons.map(person => person.name.toLowerCase() === body.name.toLowerCase())) {
+    if (persons.find(person => person.name.toLowerCase() === body.name.toLowerCase())) {
         return response.status(400).json({
             error: `${body.name} already exists, name must be unique`
         })
@@ -86,7 +97,13 @@ app.post('/api/persons', (request, response) => {
     response.json(person)
 })
 
-const PORT = 3001
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+  }
+  
+app.use(unknownEndpoint)
+
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
 console.log(`Server running on port ${PORT}`)
 })
