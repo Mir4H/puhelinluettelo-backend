@@ -23,7 +23,7 @@ const personSchema = new mongoose.Schema({
     validate: {
       validator: function(v) {
         return /^\d{2,3}-\d+$/.test(v)
-      }, 
+      },
       message: props => `${props.value} is not valid, use format 05-555555 or 055-555555, please.`
     },
     required: [true, 'This field is required']
@@ -35,7 +35,7 @@ personSchema.set('toJSON', {
     returnedObject.id = returnedObject._id.toString()
     delete returnedObject._id
     delete returnedObject.__v
-}
+  }
 })
 
 module.exports = mongoose.model('Person', personSchema)
